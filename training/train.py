@@ -26,6 +26,7 @@ def main():
     # args to be passed to .fit :- epochs, steps_per_epoch, validation_data, callbacks, verbose
 
     # model.save
+    # save model here
 
 
 
