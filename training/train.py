@@ -12,7 +12,7 @@ from data.imagenet_patch_loader import create_datasets
 
 
 
-def main():
+def main(args):
     if args.precision_policy:
         tf.keras.mixed_precision.set_global_policy(args.precision_policy) # setting mixed precision plocy
     
@@ -83,27 +83,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(args)
-
-
-
-'''
-
-ADD IN THE DATA SCRIPT IN PROBABLY THE MAIN FUNCTION THAT'S CALLED BY train.py
-    dataset = dataset.map(
-        lambda x: crop_image(read_png(x), args.patchsize),
-        num_parallel_calls=tf.data.AUTOTUNE) # Changed to AUTOTUNE
-
-    # Batch the dataset. drop_remainder=True ensures all batches have
-    # the same size, which can be beneficial for fixed-size inputs in models.
-    dataset = dataset.batch(args.batchsize, drop_remainder=True)
-
-    # Prefetch data to overlap data preprocessing and model execution.
-    # This also uses AUTOTUNE to optimize the prefetching buffer size.
-    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
-
-    return dataset
-
-'''
 
 
 
