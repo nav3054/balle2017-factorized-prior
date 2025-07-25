@@ -6,10 +6,9 @@ import tensorflow_compression as tfc
 import argparse
 import glob
 
+from data.imagenet_patch_loader import create_datasets
 from model.balle_2017_model import Balle2017FactorizedPrior
 from training.callbacks import get_callbacks
-from data.imagenet_patch_loader import create_datasets
-
 
 
 def main(args):
@@ -27,24 +26,53 @@ def main(args):
         batch_size = args.batch_size, 
         patches_per_image = args.patches_per_image, 
         max_images = args.max_images, 
-        val_split = args.val_split)
+        val_split = args.val_split
+    )
 
     # create model first
-    model = Balle2017FactorizedPrior()
+    model = Balle2017FactorizedPrior(
+        num_filters = args.num_filters,
+        lambda_rd = args.lambda_rd
+    )
 
     # optimizer
+    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
+
     # compile
+    model.compile(optimizer = optimizer)
 
     # callbacks from callback script
-
+    callbacks = get_callbacks(
+        model = model, 
+        val_data = val_ds,
+        save_dir = args.save_dir,
+        early_stopping_patience = args.early_stopping_patience,
+        log_images_every = args.log_images_every,
+        num_images_to_log = args.num_images_to_log
+    ) 
 
     # model.fit()
+    model.fit(
+        train_ds,
+        epochs = args.epochs,
+        steps_per_epoch = args.steps_per_epoch,
+        validation_data = val_ds,
+        callbacks = callbacks,
+        verbose = 1
+    )
     # args to be passed to .fit :- epochs, steps_per_epoch, validation_data, callbacks, verbose
 
-    # model.save
-    # save model here
+    # save the final model
+    final_path = os.path.join(args.save_dir, "final_model")
+    model.save(final_path)
+    print(f"Final model saved to: {final_path}")
 
-
+    # Evaluate on test set -> CLIC test set 2024
+    print("\nEvaluating on test set...")
+    results = model.evaluate(test_ds, return_dict=True)
+    print(f"Test Loss: {results['loss']:.4f}")
+    print(f"Test BPP: {results['bpp']:.4f}")
+    print(f"Test Distortion/MSE: {results['distortion']:.6f}")
 
 
 
