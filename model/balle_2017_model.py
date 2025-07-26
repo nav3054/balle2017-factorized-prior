@@ -52,7 +52,7 @@ class BalleDecoder(tf.keras.Sequential):
 
 class Balle2017FactorizedPrior(keras.Model):
     """Main model class - "End-to-End Optimized Image Compression" by Ballé et al. (2017)."""
-    def __init__(self, num_filters, lambda_rd):
+    def __init__(self, num_filters, lambda_rd, preserve_original_shape=True):
         super().__init__()
         self.num_filters = num_filters
         self.lambda_rd = lambda_rd

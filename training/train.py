@@ -33,7 +33,8 @@ def main(args):
     # create model first
     model = Balle2017FactorizedPrior(
         num_filters = args.num_filters,
-        lambda_rd = args.lambda_rd
+        lambda_rd = args.lambda_rd,
+        preserve_original_shape=True # added to make sure the sice of orig imag and reconstructed image match 
     )
 
     # optimizer
