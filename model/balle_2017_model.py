@@ -3,6 +3,8 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+import tensorflow_compression as tfc
+from training.losses import compute_rate_distortion_loss
 
 
 class BalleEncoder(tf.keras.Sequential):
@@ -54,6 +56,7 @@ class Balle2017FactorizedPrior(keras.Model):
         super().__init__()
         self.num_filters = num_filters
         self.lambda_rd = lambda_rd
+        self.preserve_original_shape = preserve_original_shape # so that x (orig img) and x_hat (reconstructed img) have same shape
 
         self.encoder = BalleEncoder(num_filters)
         self.decoder = BalleDecoder(num_filters)
@@ -61,7 +64,7 @@ class Balle2017FactorizedPrior(keras.Model):
         self.entropy_model = tfc.ContinuousBatchedEntropyModel(
             self.prior, 
             coding_rank=3,
-            compression=False)
+            compression=True)
 
         self.loss_metric = tf.keras.metrics.Mean(name="loss")
         self.bpp_metric = tf.keras.metrics.Mean(name="bpp")
@@ -72,6 +75,12 @@ class Balle2017FactorizedPrior(keras.Model):
         y = self.encoder(x) # encodes input image x into latent rep y
         y_hat, bits = self.entropy_model(y, training=training) # quantizes y and estimates bits using the entropy model, generating y_hat and bits  
         x_hat = self.decoder(y_hat) # reconstructs image x_hat from quantized latent y_hat
+        
+        if self.preserve_original_shape:
+            # crop reconstructed img to match input img
+            x_shape = tf.shape(x)
+            x_hat = x_hat[:, :x_shape[1], :x_shape[2], :]
+        
         return x_hat, bits
 
 
@@ -96,7 +105,7 @@ class Balle2017FactorizedPrior(keras.Model):
         "bpp": self.bpp_metric.result(),
         "distortion": self.distortion_metric.result()
         }
-
+    '''
     def test_step(self, data):
         x = data  # assuming you pass only inputs during validation
 
@@ -118,6 +127,27 @@ class Balle2017FactorizedPrior(keras.Model):
             "loss": self.total_loss_tracker.result(),
             "bpp": self.bpp_tracker.result(),
             "distortion": self.distortion_tracker.result(),
+        }
+    '''
+
+    def test_step(self, x):
+        #x, _ = data  # assuming data is (input, label), label is unused
+
+        # Forward pass
+        x_hat, bits = self(x, training=False)
+
+        # Compute loss
+        loss, (bpp, distortion) = compute_rate_distortion_loss(x, x_hat, bits, self.lambda_rd)
+
+        # Update metrics
+        self.loss_metric.update_state(loss)
+        self.bpp_metric.update_state(bpp)
+        self.distortion_metric.update_state(distortion)
+
+        return {
+            "loss": self.loss_metric.result(),
+            "bpp": self.bpp_metric.result(),
+            "distortion": self.distortion_metric.result()
         }
 
 

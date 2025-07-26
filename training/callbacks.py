@@ -45,7 +45,7 @@ class ImageLoggingCallback(tf.keras.callbacks.Callback):
         if (epoch + 1) % self.log_every == 0:
             for batch in self.val_data.take(1):
                 x = batch
-            x_hat, _, _ = self.model(x, training=False)
+            x_hat, _ = self.model(x, training=False)
 
             # Prepare combined image grid with original and reconstructed imgs
             combined_image = self._combine_orig_recon_images(x, x_hat, self.num_images)
@@ -122,10 +122,11 @@ def get_callbacks(model, val_data, save_dir, save_every_epochs=5, early_stopping
 
 
     # ModelCheckpoint - save best only
-    best_checkpoint_path = os.path.join(save_dir, 'checkpoint_epoch_{epoch:02d}_val_loss_{val_loss:.4f}.h5')
+    best_checkpoint_path = os.path.join(save_dir, 'checkpoint_epoch_{epoch:02d}_val_loss_{val_loss:.4f}')
     best_checkpoint = tf.keras.callbacks.ModelCheckpoint(
         filepath=best_checkpoint_path,
-        save_weights_only=True,
+        save_weights_only=False,
+        save_format = 'tf',
         monitor='val_loss',
         mode='min',
         save_best_only=True,
