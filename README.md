@@ -1,4 +1,6 @@
-# balle2017-factorized-prior
+<!-- # balle2017-factorized-prior -->
+
+# End-to-end Optimized Image Compression (Ballé et al., 2017)
 
 This repository contains an unofficial TensorFlow 2.x implementation of the paper [End-to-end Optimized Image Compression](https://arxiv.org/abs/1611.01704) by Ballé et al. (2017).
 
